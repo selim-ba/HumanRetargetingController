@@ -20,4 +20,15 @@
   <exec_depend>rospy</exec_depend>
 
   <doc_depend>doxygen</doc_depend>
+
+  # added by selim 2026-03-13 based on hugo's last commit
+  <buildtool_depend>ament_cmake</buildtool_depend>.
+  <build_depend>ament_cmake_python</build_depend>
+  
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  
+  <exec_depend>tf_transformations</exec_depend>
+  #######################################################
+
 </package>

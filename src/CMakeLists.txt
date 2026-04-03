@@ -12,7 +12,8 @@ add_library(${CONTROLLER_NAME} SHARED
 target_link_libraries(${CONTROLLER_NAME} PUBLIC 
   mc_rtc::mc_control_fsm
   mc_rtc::mc_rtc_ros
-  baseline_walking_controller::BaselineWalkingController)
+  baseline_walking_controller::BaselineWalkingController mc_rbdyn::mc_manus) # selim 2026-03-13 : added 'mc_rbdyn::mc_manus' to match hugo's last commit
+
 
 install(TARGETS ${CONTROLLER_NAME} DESTINATION ${MC_RTC_LIBDIR} EXPORT ${TARGETS_EXPORT_NAME})
 
