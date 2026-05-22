@@ -24,6 +24,8 @@ endif()
 
 find_package(baseline_walking_controller REQUIRED)
 
+find_package(mc_manus REQUIRED) # added by selim 2026-03-13 based on hugo's last commit
+
 set(DOXYGEN_HTML_OUTPUT doxygen-html)
 set(CATKIN_ENABLE_TESTING OFF)
 option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" ON)

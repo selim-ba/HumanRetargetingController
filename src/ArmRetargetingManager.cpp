@@ -8,6 +8,15 @@
 #include <HumanRetargetingController/RetargetingManagerSet.h>
 #include <HumanRetargetingController/RosPoseManager.h>
 
+// #include <fstream>
+// #include <chrono>
+// #include <iomanip>
+// #include <sstream>
+// #include <filesystem>
+
+// std::ofstream csvFile_;
+// bool csvInitialized_ = false;
+
 using namespace HRC;
 
 void ArmRetargetingManager::Configuration::load(const mc_rtc::Configuration & mcRtcConfig)
@@ -95,6 +104,7 @@ ArmRetargetingManager::ArmRetargetingManager(HumanRetargetingController * ctlPtr
   config_.load(mcRtcConfig);
 }
 
+// original reset function
 void ArmRetargetingManager::reset()
 {
   humanElbowPoseManager_ = std::make_shared<RosPoseManager>(ctlPtr_, config_.humanElbowPoseTopicName);
@@ -119,6 +129,89 @@ void ArmRetargetingManager::reset()
   }
 }
 
+// test reset function 31-03-2026 for csv handling
+// void ArmRetargetingManager::reset()
+// {
+//   humanElbowPoseManager_ = std::make_shared<RosPoseManager>(ctlPtr_, config_.humanElbowPoseTopicName);
+//   humanWristPoseManager_ = std::make_shared<RosPoseManager>(ctlPtr_, config_.humanWristPoseTopicName);
+
+//   humanShoulderPose_ = std::nullopt;
+//   humanElbowPose_ = std::nullopt;
+//   humanWristPose_ = std::nullopt;
+
+//   robotShoulderPose_ = std::nullopt;
+//   robotElbowPose_ = std::nullopt;
+//   robotWristPose_ = std::nullopt;
+
+//   stiffnessRatioFunc_ = nullptr;
+
+//   humanCalibSource_.clear();
+//   robotCalibSource_.clear();
+
+//   if(!config_.calibResultConfig.empty())
+//   {
+//     calibResult_.load(config_.calibResultConfig);
+//   }
+
+//   // ===== CSV INIT =====
+//   if(csvFile_.is_open())
+//   {
+//     csvFile_.close();
+//   }
+
+//   // get current time (thread-safe)
+//   auto now = std::chrono::system_clock::now();
+//   std::time_t t = std::chrono::system_clock::to_time_t(now);
+
+//   std::tm tm;
+//   localtime_r(&t, &tm);
+
+//   // build folder path: /tmp/arm_logs_YYYYMMDD/
+//   std::ostringstream folderPath;
+//   folderPath << "/tmp/arm_logs_" << std::put_time(&tm, "%Y%m%d");
+//   // folderPath << "/$HOME/Documents/Retargeting/arm_logs_" << std::put_time(&tm, "%Y%m%d");
+
+
+//   // create directory safely
+//   std::error_code ec;
+//   std::filesystem::create_directories(folderPath.str(), ec);
+//   if(ec)
+//   {
+//     mc_rtc::log::error("[ArmRetargetingManager] Failed to create directory: {}", ec.message());
+//   }
+
+//   // build file path: /log_HHMMSS.csv
+//   std::ostringstream filePath;
+//   filePath << folderPath.str()
+//          << "/log_" << std::put_time(&tm, "%H%M%S")
+//          << "_" << (config_.armSide == ArmSide::Left ? "L" : "R")
+//          << ".csv";
+
+//   // open file
+//   csvFile_.open(filePath.str(), std::ios::out);
+
+//   if(csvFile_.is_open())
+//   {
+//     csvInitialized_ = true;
+
+//     mc_rtc::log::success("[ArmRetargetingManager] CSV logging to: {}", filePath.str());
+
+//     csvFile_ << "time,"
+//             << "human_elbow_x,human_elbow_y,human_elbow_z,"
+//             << "robot_elbow_x,robot_elbow_y,robot_elbow_z,"
+//             << "human_wrist_x,human_wrist_y,human_wrist_z,"
+//             << "robot_wrist_x,robot_wrist_y,robot_wrist_z,"
+//             << "human_wrist_qx,human_wrist_qy,human_wrist_qz,human_wrist_qw,"
+//             << "robot_wrist_qx,robot_wrist_qy,robot_wrist_qz,robot_wrist_qw\n";
+//   }
+//   else
+//   {
+//     csvInitialized_ = false;
+//     mc_rtc::log::error("[ArmRetargetingManager] Failed to open CSV file");
+//   }
+// }
+
+// TODO: check the line hugo mentionned
 void ArmRetargetingManager::updatePre()
 {
   // Calculate human and robot poses
@@ -130,8 +223,18 @@ void ArmRetargetingManager::updatePre()
 
     robotShoulderPose_ = calibResult_.robotTransFromBaseToShoulder
                          * ctl().robot().frame(ctl().retargetingManagerSet_->config().robotBaseLinkName).position();
+
     robotElbowPose_ = std::nullopt;
     robotWristPose_ = std::nullopt;
+
+    // mc_rtc::log::info("Waist pose:\n{}", humanWaistPoseManager()->pose());
+    // mc_rtc::log::info("Elbow raw pose:\n{}", humanElbowPoseManager_->pose());
+    mc_rtc::log::info("Wrist raw pose:\n{}", humanWristPoseManager_->pose()); // if quaternion does not change VR issue, if it changes correctly no VR issue
+    // mc_rtc::log::info("==== RAW INPUT DEBUG ====");
+    // mc_rtc::log::info("Waist valid: {}", humanWaistPoseManager()->isValid());
+    // mc_rtc::log::info("Elbow valid: {}", humanElbowPoseManager_->isValid());
+    // mc_rtc::log::info("Wrist valid: {}", humanWristPoseManager_->isValid());
+   
 
     if(humanWaistPoseManager()->isValid())
     {
@@ -139,27 +242,96 @@ void ArmRetargetingManager::updatePre()
         return sva::PTransformd(pose.rotation(), scale * pose.translation());
       };
 
+      // TODO: Check this line - hugo's comment - 2026-03-13
       const auto & humanWaistPoseFromOrigin = ctl().retargetingManagerSet_->config_.humanWaistPoseFromOrigin;
+      // mc_rtc::log::info("Waist from origin:\n{}", humanWaistPoseFromOrigin);
+
+      // original function
       humanShoulderPose_ = calibResult_.humanTransFromBaseToShoulder * humanWaistPoseFromOrigin;
+
+      // test 19-03-2026
+      // humanShoulderPose_ =
+      //   humanWaistPoseManager()->pose() * // go tu current waist (live from frame)
+      //   calibResult_.humanTransFromBaseToShoulder * // apply shoulder offset relative to waist
+      //   humanWaistPoseManager()->pose().inv() * // go back to waist-local frame
+      //   humanWaistPoseFromOrigin; // express everything in calibrated frame (same as elbow/wrist)
+
+      // // test 31-03-2026
+      // if(humanShoulderPose_)
+      // {
+      //   mc_rtc::log::info("Human shoulder pose:\n{}", humanShoulderPose_.value());
+      // }
+
+      // mc_rtc::log::info("==== FRAME DEBUG ====");
+      // mc_rtc::log::info("humanWaistPose:\n{}", humanWaistPoseManager()->pose());
+      // mc_rtc::log::info("humanWaistPoseFromOrigin:\n{}", humanWaistPoseFromOrigin);
+
+      // // MOST IMPORTANT CHECK
+      // if(humanShoulderPose_)
+      // {
+      //   auto test = humanWaistPoseManager()->pose().inv() * humanShoulderPose_.value();
+      //   mc_rtc::log::info("Shoulder expressed in waist frame (MUST be constant):\n{}", test);
+      // }
+      ////////////////////////////
 
       if(humanElbowPoseManager_->isValid())
       {
         humanElbowPose_ =
             humanElbowPoseManager_->pose() * humanWaistPoseManager()->pose().inv() * humanWaistPoseFromOrigin;
+
         robotElbowPose_ =
             calibResult_.elbowRotTransFromHumanToRobot
             * scalePose(humanElbowPose_.value() * humanShoulderPose_.value().inv(), calibResult_.elbowScale)
             * robotShoulderPose_.value();
       }
+
       if(humanWristPoseManager_->isValid())
       {
         humanWristPose_ =
             humanWristPoseManager_->pose() * humanWaistPoseManager()->pose().inv() * humanWaistPoseFromOrigin;
+        
+        mc_rtc::log::info("Waist pose:\n{}", humanWaistPoseManager()->pose());
+        mc_rtc::log::info("humanWristPose_:\n{}", humanWristPose_.value());
+
+        // wristRotTransFromHumanToRObot applied before scaling and before transforming to robot shoulder frame ?
+        
         robotWristPose_ =
             calibResult_.wristRotTransFromHumanToRobot
             * scalePose(humanWristPose_.value() * humanShoulderPose_.value().inv(), calibResult_.wristScale)
             * robotShoulderPose_.value();
+
+        const auto & A = calibResult_.wristRotTransFromHumanToRobot;
+
+        const auto B =
+          scalePose(
+            humanWristPose_.value() * humanShoulderPose_.value().inv(),
+            calibResult_.wristScale
+          );
+
+        const auto & C = robotShoulderPose_.value();
+
+        mc_rtc::log::info("A (wristRotTransFromHumanToRobot) rotation:\n{}", A.rotation());
+        mc_rtc::log::info("B (scaled human wrist) rotation:\n{}", B.rotation());
+        mc_rtc::log::info("C (robot shoulder) rotation:\n{}", C.rotation());
+        mc_rtc::log::info("Final robotWristPose_ rotation:\n{}", robotWristPose_.value().rotation());
       }
+
+
+      // test 31-03-2026
+      // mc_rtc::log::info("==== LIMB DEBUG ====");
+      // if(humanElbowPose_ && humanShoulderPose_)
+      // {
+      //   auto relHuman = humanElbowPose_.value() * humanShoulderPose_.value().inv();
+      //   mc_rtc::log::info("Human elbow relative to shoulder:\n{}", relHuman);
+      // }
+
+      // if(robotElbowPose_ && robotShoulderPose_)
+      // {
+      //   auto relRobot = robotElbowPose_.value() * robotShoulderPose_.value().inv();
+      //   mc_rtc::log::info("Robot elbow relative to shoulder:\n{}", relRobot);
+      // }
+
+
     }
   }
 }
@@ -169,8 +341,25 @@ void ArmRetargetingManager::updatePost()
   // Set task target
   if(ctl().retargetingManagerSet_->isEnabled_)
   {
+    // mc_rtc::log::info("==== FINAL TARGET DEBUG ====");
     setTaskTarget(elbowTask(), robotElbowPose_.value());
-    setTaskTarget(wristTask(), robotWristPose_.value());
+    // mc_rtc::log::info("FINAL robot elbow sent to task:\n{}", robotElbowPose_.value());
+    setTaskTarget(wristTask(), robotWristPose_.value()); // og line 
+    // mc_rtc::log::info("FINAL robot wrist sent to task:\n{}", robotWristPose_.value());
+
+    // test 19-03-2026 force wrist rotation
+    // if(robotWristPose_)
+    // {
+    //   auto pose = robotWristPose_.value();
+
+    //   double t = ctl().t();
+
+    //   // rotate ONLY around wrist Y (axis [0 0 1])
+    //   pose.rotation() =
+    //     Eigen::AngleAxisd(0.8 * std::sin(t), Eigen::Vector3d::UnitZ()).toRotationMatrix();
+
+    //   setTaskTarget(wristTask(), pose);
+    // }
   }
 
   // Interpolate task stiffness
@@ -193,10 +382,41 @@ void ArmRetargetingManager::updatePost()
       stiffnessRatioFunc_.reset();
     }
   }
+
+
+  // add csv 01-04-2026
+  // if(csvInitialized_ && humanElbowPose_ && robotElbowPose_
+  //                   && humanWristPose_ && robotWristPose_)
+  // {
+  //   const auto & he = humanElbowPose_.value().translation();
+  //   const auto & re = robotElbowPose_.value().translation();
+  //   const auto & hw = humanWristPose_.value().translation();
+  //   const auto & rw = robotWristPose_.value().translation();
+
+  //   auto qh = Eigen::Quaterniond(humanWristPose_.value().rotation());
+  //   auto qr = Eigen::Quaterniond(robotWristPose_.value().rotation());
+
+  //   csvFile_ << ctl().t() << ","
+  //           << he.x() << "," << he.y() << "," << he.z() << ","
+  //           << re.x() << "," << re.y() << "," << re.z() << ","
+  //           << hw.x() << "," << hw.y() << "," << hw.z() << ","
+  //           << rw.x() << "," << rw.y() << "," << rw.z() << ","
+
+  //           << qh.x() << "," << qh.y() << "," << qh.z() << "," << qh.w() << ","
+  //           << qr.x() << "," << qr.y() << "," << qr.z() << "," << qr.w()
+
+  //           << std::endl;
+  // }
 }
 
 void ArmRetargetingManager::stop()
 {
+
+  // if(csvFile_.is_open())
+  // {
+  //   csvFile_.close();
+  // }
+
   for(const auto & task : {elbowTask(), wristTask()})
   {
     ctl().solver().removeTask(task);
@@ -245,6 +465,47 @@ void ArmRetargetingManager::addToLogger(mc_rtc::Logger & logger)
   logger.addLogEntry(name + "_humanWristPose", this, [this]() {
     return humanWristPoseManager_->isValid() ? humanWristPoseManager_->pose() : sva::PTransformd::Identity();
   });
+
+  // // ajout du  31-03-2026
+  // // ===== CUSTOM DEBUG DATA =====
+  // // Human shoulder
+  // logger.addLogEntry(name + "_humanShoulderPose", this, [this]() {
+  //   return humanShoulderPose_.has_value() ? humanShoulderPose_.value() : sva::PTransformd::Identity();
+  // });
+
+  // // Robot shoulder
+  // logger.addLogEntry(name + "_robotShoulderPose", this, [this]() {
+  //   return robotShoulderPose_.has_value() ? robotShoulderPose_.value() : sva::PTransformd::Identity();
+  // });
+
+  // // Robot elbow target
+  // logger.addLogEntry(name + "_robotElbowPose", this, [this]() {
+  //   return robotElbowPose_.has_value() ? robotElbowPose_.value() : sva::PTransformd::Identity();
+  // });
+
+  // // Robot wrist target
+  // logger.addLogEntry(name + "_robotWristPose", this, [this]() {
+  //   return robotWristPose_.has_value() ? robotWristPose_.value() : sva::PTransformd::Identity();
+  // });
+
+  // // Relative elbow (human)
+  // logger.addLogEntry(name + "_humanElbowRel", this, [this]() {
+  //   if(humanElbowPose_ && humanShoulderPose_)
+  //   {
+  //     return humanElbowPose_.value() * humanShoulderPose_.value().inv();
+  //   }
+  //   return sva::PTransformd::Identity();
+  // });
+
+  // // Relative elbow (robot)
+  // logger.addLogEntry(name + "_robotElbowRel", this, [this]() {
+  //   if(robotElbowPose_ && robotShoulderPose_)
+  //   {
+  //     return robotElbowPose_.value() * robotShoulderPose_.value().inv();
+  //   }
+  //   return sva::PTransformd::Identity();
+  // });
+
 }
 
 void ArmRetargetingManager::removeFromLogger(mc_rtc::Logger & logger)
@@ -307,6 +568,7 @@ void ArmRetargetingManager::setTaskTarget(const std::shared_ptr<mc_tasks::Transf
   }
 }
 
+// TODO: Set the human calibration - hugo's comment - 2026-03-13
 void ArmRetargetingManager::setHumanCalibSource(const std::string & axis)
 {
   if(!(humanWaistPoseManager()->isValid() && humanElbowPoseManager_->isValid() && humanWristPoseManager_->isValid()))
@@ -328,17 +590,37 @@ void ArmRetargetingManager::setHumanCalibSource(const std::string & axis)
 
 void ArmRetargetingManager::setRobotCalibSource(const std::string & axis)
 {
+
+  // test 03-04-2026
+  if(!ctl().retargetingManagerSet_->calibRobots_)
+  {
+    mc_rtc::log::error("calibRobots_ is null");
+    return;
+  }
+  ////
+
+
   ctl().retargetingManagerSet_->makeCalibRobot();
 
   auto & calibRobot = ctl().retargetingManagerSet_->calibRobots_->robot();
   for(const auto & [jointName, jointPos] : config_.robotCalibPostures.at(axis))
   {
+    // test 03-04-2026
+    if(!calibRobot.hasJoint(jointName))
+    {
+      mc_rtc::log::error("Joint {} not found!", jointName);
+      return;
+    }
+    ////
+
     calibRobot.q()[calibRobot.jointIndexByName(jointName)][0] = jointPos;
   }
   calibRobot.forwardKinematics();
 
   const auto & basePose = calibRobot.frame(ctl().retargetingManagerSet_->config().robotBaseLinkName).position();
   const auto & elbowPose = calibRobot.frame(elbowTask()->frame().name()).position();
+
+  mc_rtc::log::info("Looking for frame: {}", wristTask()->frame().name()); // test 03-04-2026
   const auto & wristPose = calibRobot.frame(wristTask()->frame().name()).position();
   robotCalibSource_[axis] = std::array<sva::PTransformd, 2>{elbowPose * basePose.inv(), wristPose * basePose.inv()};
 
@@ -362,6 +644,7 @@ void ArmRetargetingManager::updateCalib()
   }
 
   calibResult_.isInitialized = true;
+  mc_rtc::log::warning("Calibration loaded: {}", calibResult_.isInitialized);
 
   calibResult_.humanTransFromBaseToShoulder = calcShoulderPoseForCalib(humanCalibSource_);
   calibResult_.robotTransFromBaseToShoulder = calcShoulderPoseForCalib(robotCalibSource_);
@@ -391,10 +674,30 @@ sva::PTransformd ArmRetargetingManager::calcShoulderPoseForCalib(const CalibSour
   for(size_t i = 0; i < axes.size(); i++)
   {
     posMat.col(i) = calibSource.at(axes[i])[0].translation();
-    dirMat.col(i) = (calibSource.at(axes[i])[1].translation() - calibSource.at(axes[i])[0].translation()).normalized();
 
+
+    // test commented 2026-04-02
+    auto raw_d = calibSource.at(axes[i])[1].translation() - calibSource.at(axes[i])[0].translation();
+
+    mc_rtc::log::info("[CALIB DEBUG] Axis {} raw d = {}", axes[i], raw_d.transpose());
+    mc_rtc::log::info("[CALIB DEBUG] Axis {} norm = {}", axes[i], raw_d.norm());
+
+    if(raw_d.norm() < 1e-6)
+    {
+      mc_rtc::log::error("[CALIB ERROR] Axis {} has near-zero direction!", axes[i]);
+    }
+
+    dirMat.col(i) = raw_d.normalized();
+
+    mc_rtc::log::info("[CALIB DEBUG] Axis {} normalized d = {}", axes[i], dirMat.col(i).transpose());
+
+    // og line below 
+    //dirMat.col(i) = (calibSource.at(axes[i])[1].translation() - calibSource.at(axes[i])[0].translation()).normalized();
+
+    // 18-03-2026 freezed temporarily to see if it fixes the left/right arm mirroring mismatch
     if(config_.armSide == ArmSide::Right && axes[i] == "Y")
     {
+      // note selim 17-03-2026, check here if issue with hand mirroring ?
       posMat.col(i).y() *= -1.0;
       dirMat.col(i).y() *= -1.0;
     }

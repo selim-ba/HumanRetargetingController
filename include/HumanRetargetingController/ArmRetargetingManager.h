@@ -30,6 +30,7 @@ class ArmRetargetingManager
 
 public:
   /** \brief Configuration. */
+  //TODO: Check this - hugo's comment - 2026-03-13
   struct Configuration
   {
     //! Arm side
@@ -253,5 +254,13 @@ protected:
 
   //! Calibration result
   CalibResult calibResult_;
+
+// added 2026-04-01
+private:
+  std::ofstream csvFile_;
+  bool csvInitialized_ = false;
+
 };
+
+
 } // namespace HRC
