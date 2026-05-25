@@ -29,15 +29,25 @@ class PublishPoseViveTracker(Node):
         super().__init__('publish_pose_vive_tracker')
         self.vr_system = openvr.init(openvr.VRApplication_Other)
 
-        self.root_mat = euler_matrix(0.5 * np.pi, 0.0, 0.0)
+        # self.root_mat = euler_matrix(0.5 * np.pi, 0.0, 0.0) #V1  - version before 2026-05-25
+        # self.root_mat = euler_matrix(0.0, 0.0, np.pi) # V2 
+        # self.root_mat = euler_matrix(0.0, 0.5 * np.pi, np.pi) # V3
+        self.root_mat = np.eye(4) # V4  # working version 2026-05-25
+        # self.root_mat = euler_matrix(0, np.pi, 0)
         self.offset_mat_map = {
-            "waist": quaternion_offset(-0.5 * np.pi, 0.0, 0.5 * np.pi),
+            # "waist": quaternion_offset(-0.5 * np.pi, 0.0, 0.5 * np.pi), #- version before 2026-05-25
+            # "waist": euler_matrix(-0.5 * np.pi, 0.0, 0.5 * np.pi, "rxyz"), #V1 
+            "waist": euler_matrix(0.5 * np.pi, 0.0, 0.5 * np.pi, "rxyz"), #V2 - working version 2026-05-25
+            # "waist": euler_matrix(-0.5 * np.pi, 0.0, -0.5 * np.pi, "rxyz"), #V3 
+            # "waist": euler_matrix(0.0, 0.0, np.pi, "rxyz"), #V4 
+            # "waist": euler_matrix(0, 0, np.pi/2, "rxyz"), #V5
+
             "left_elbow": translation_matrix([0.0, 0.0, 0.04]),
             "right_elbow": translation_matrix([0.0, 0.0, 0.04]),
 
-            # TODO Look for the right way to manipulate the L_WRIST_Y and R_WRIST_Y {Note Selim 2026-03-13 - TO CHECK}
             "left_wrist": translation_matrix([0.0, 0.0, 0.05]),
-            "right_wrist": quaternion_offset(np.pi, 0.0, 0.0),
+            "right_wrist": translation_matrix([0.0, 0.0, 0.05]),
+            # "right_wrist": quaternion_offset(np.pi, 0.0, 0.0), 
         }
             
 
@@ -95,7 +105,6 @@ class PublishPoseViveTracker(Node):
         if print_info:
             self._printed_device_info = True
 
-    # TODO Check the logic of this function  {Note Selim 2026-03-13 - TO CHECK}
     def process_single_device_data(self, device_idx, print_info=False):
         
         if not self.device_data_list[device_idx].bDeviceIsConnected:

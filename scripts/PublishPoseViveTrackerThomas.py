@@ -16,9 +16,14 @@ class PublishPoseViveTracker(Node):
         super().__init__('publish_pose_vive_tracker')
         self.vr_system = openvr.init(openvr.VRApplication_Other)
 
-        self.root_mat = euler_matrix(0.5 * np.pi, 0.0, 0.0)
+        self.root_mat = euler_matrix(0.5 * np.pi, 0.0, 0.0) #V1  - version 2026-05-25
+        # self.root_mat = euler_matrix(0.0, 0.0, np.pi) # V2 
+        # self.root_mat = euler_matrix(0.0, 0.5 * np.pi, np.pi) # V3
         self.offset_mat_map = {
-            "waist": euler_matrix(-0.5 * np.pi, 0.0, 0.5 * np.pi, "rxyz"),
+            "waist": euler_matrix(-0.5 * np.pi, 0.0, 0.5 * np.pi, "rxyz"), #V1 - A1 - version 2026-05-25
+            # "waist": euler_matrix(0.5 * np.pi, 0.0, 0.5 * np.pi, "rxyz"), #V2 - A1
+            # "waist": euler_matrix(-0.5 * np.pi, 0.0, -0.5 * np.pi, "rxyz"), #V3 - A1
+            # "waist": euler_matrix(0.0, 0.0, np.pi, "rxyz"), #V4 - A2
             "left_elbow": translation_matrix([0.0, 0.0, 0.04]),
             "left_wrist": translation_matrix([0.0, 0.0, 0.05]),
             "right_elbow": translation_matrix([0.0, 0.0, 0.04]),
