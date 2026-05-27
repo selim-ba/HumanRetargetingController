@@ -392,15 +392,31 @@ std::vector<double> RetargetingManagerSet::ergonomicsMapToVector_(
 
 void RetargetingManagerSet::updateGripper()
 {
+
+  mc_rtc::log::info("updateGripper called");
+
+  mc_rtc::log::info("l_gripper exists: {}", ctl().robot().hasGripper("l_gripper"));
+  mc_rtc::log::info("r_gripper exists: {}", ctl().robot().hasGripper("r_gripper"));
+  mc_rtc::log::info("left glove null: {}", manus_glove_left_ == nullptr);
+  mc_rtc::log::info("right glove null: {}", manus_glove_right_ == nullptr);
+
   // Process each Manus glove
   auto processGlove = [this](const std::string & gripperName,
                             mc_rbdyn::ManusDevice * glove)
   {
-    if(!glove) { return; }
-    if(!ctl().robot().hasGripper(gripperName)) { return; }
+    mc_rtc::log::info("processGlove({})", gripperName);
+    if(!glove) {
+      mc_rtc::log::warning("Glove {} is NULL", gripperName);
+      return;
+    }
+    if(!ctl().robot().hasGripper(gripperName)) { 
+      mc_rtc::log::warning("Robot has NO gripper {}", gripperName);
+      return;
+    }
 
     // 1) Read Manus ergonomics
     const auto fingers = glove->getFingers();
+    mc_rtc::log::info("{} fingers map size = {}", gripperName, fingers.size());
 
     // 2) Ordered list of ergonomics → Leap joints (NO PINKY)
   static const std::vector<std::string> LEAP_TO_LGRIPPER_ORDER = {
@@ -446,6 +462,7 @@ void RetargetingManagerSet::updateGripper()
 
   processGlove("l_gripper", manus_glove_left_);
   processGlove("r_gripper", manus_glove_right_);
+
 }
 
 

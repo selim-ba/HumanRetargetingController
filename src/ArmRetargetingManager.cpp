@@ -229,7 +229,7 @@ void ArmRetargetingManager::updatePre()
 
     // mc_rtc::log::info("Waist pose:\n{}", humanWaistPoseManager()->pose());
     // mc_rtc::log::info("Elbow raw pose:\n{}", humanElbowPoseManager_->pose());
-    mc_rtc::log::info("Wrist raw pose:\n{}", humanWristPoseManager_->pose()); // if quaternion does not change VR issue, if it changes correctly no VR issue
+    // mc_rtc::log::info("Wrist raw pose:\n{}", humanWristPoseManager_->pose()); // if quaternion does not change VR issue, if it changes correctly no VR issue
     // mc_rtc::log::info("==== RAW INPUT DEBUG ====");
     // mc_rtc::log::info("Waist valid: {}", humanWaistPoseManager()->isValid());
     // mc_rtc::log::info("Elbow valid: {}", humanElbowPoseManager_->isValid());
