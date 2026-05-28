@@ -1,4 +1,5 @@
 # 2026-03-13 - Copied from Hugo's last commit
+# Last update : 2026-05-25
 #!/usr/bin/env python3
 import sys
 import json
