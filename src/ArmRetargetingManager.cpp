@@ -290,30 +290,30 @@ void ArmRetargetingManager::updatePre()
         humanWristPose_ =
             humanWristPoseManager_->pose() * humanWaistPoseManager()->pose().inv() * humanWaistPoseFromOrigin;
         
-        mc_rtc::log::info("Waist pose:\n{}", humanWaistPoseManager()->pose());
-        mc_rtc::log::info("humanWristPose_:\n{}", humanWristPose_.value());
+        // mc_rtc::log::info("Waist pose:\n{}", humanWaistPoseManager()->pose());
+        // mc_rtc::log::info("humanWristPose_:\n{}", humanWristPose_.value());
 
-        // wristRotTransFromHumanToRObot applied before scaling and before transforming to robot shoulder frame ?
+        // wristRotTransFromHumanToRobot applied before scaling and before transforming to robot shoulder frame ?
         
         robotWristPose_ =
             calibResult_.wristRotTransFromHumanToRobot
             * scalePose(humanWristPose_.value() * humanShoulderPose_.value().inv(), calibResult_.wristScale)
             * robotShoulderPose_.value();
 
-        const auto & A = calibResult_.wristRotTransFromHumanToRobot;
+        // const auto & A = calibResult_.wristRotTransFromHumanToRobot;
 
-        const auto B =
-          scalePose(
-            humanWristPose_.value() * humanShoulderPose_.value().inv(),
-            calibResult_.wristScale
-          );
+        // const auto B =
+        //   scalePose(
+        //     humanWristPose_.value() * humanShoulderPose_.value().inv(),
+        //     calibResult_.wristScale
+        //   );
 
-        const auto & C = robotShoulderPose_.value();
+        // const auto & C = robotShoulderPose_.value();
 
-        mc_rtc::log::info("A (wristRotTransFromHumanToRobot) rotation:\n{}", A.rotation());
-        mc_rtc::log::info("B (scaled human wrist) rotation:\n{}", B.rotation());
-        mc_rtc::log::info("C (robot shoulder) rotation:\n{}", C.rotation());
-        mc_rtc::log::info("Final robotWristPose_ rotation:\n{}", robotWristPose_.value().rotation());
+        // mc_rtc::log::info("A (wristRotTransFromHumanToRobot) rotation:\n{}", A.rotation());
+        // mc_rtc::log::info("B (scaled human wrist) rotation:\n{}", B.rotation());
+        // mc_rtc::log::info("C (robot shoulder) rotation:\n{}", C.rotation());
+        // mc_rtc::log::info("Final robotWristPose_ rotation:\n{}", robotWristPose_.value().rotation());
       }
 
 
@@ -467,7 +467,7 @@ void ArmRetargetingManager::addToLogger(mc_rtc::Logger & logger)
   });
 
   // // ajout du  31-03-2026
-  // // ===== CUSTOM DEBUG DATA =====
+  // // CUSTOM DEBUG 
   // // Human shoulder
   // logger.addLogEntry(name + "_humanShoulderPose", this, [this]() {
   //   return humanShoulderPose_.has_value() ? humanShoulderPose_.value() : sva::PTransformd::Identity();
@@ -679,17 +679,17 @@ sva::PTransformd ArmRetargetingManager::calcShoulderPoseForCalib(const CalibSour
     // test commented 2026-04-02
     auto raw_d = calibSource.at(axes[i])[1].translation() - calibSource.at(axes[i])[0].translation();
 
-    mc_rtc::log::info("[CALIB DEBUG] Axis {} raw d = {}", axes[i], raw_d.transpose());
-    mc_rtc::log::info("[CALIB DEBUG] Axis {} norm = {}", axes[i], raw_d.norm());
+    // mc_rtc::log::info("[CALIB DEBUG] Axis {} raw d = {}", axes[i], raw_d.transpose());
+    // mc_rtc::log::info("[CALIB DEBUG] Axis {} norm = {}", axes[i], raw_d.norm());
 
     if(raw_d.norm() < 1e-6)
     {
-      mc_rtc::log::error("[CALIB ERROR] Axis {} has near-zero direction!", axes[i]);
+      // mc_rtc::log::error("[CALIB ERROR] Axis {} has near-zero direction!", axes[i]);
     }
 
     dirMat.col(i) = raw_d.normalized();
 
-    mc_rtc::log::info("[CALIB DEBUG] Axis {} normalized d = {}", axes[i], dirMat.col(i).transpose());
+    // mc_rtc::log::info("[CALIB DEBUG] Axis {} normalized d = {}", axes[i], dirMat.col(i).transpose());
 
     // og line below 
     //dirMat.col(i) = (calibSource.at(axes[i])[1].translation() - calibSource.at(axes[i])[0].translation()).normalized();
