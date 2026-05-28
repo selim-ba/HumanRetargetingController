@@ -12,3 +12,18 @@ GTAGS
 etc/mc_rtc.yaml
 
 venv-*
+
+
+# --- Selim Perso
+scripts/plotcoordenv/
+scripts/plot_coords.py
+scripts/PublishPoseViveTrackerHugo.py
+scripts/PublishPoseViveTrackerThomas.py
+
+scripts/selim_rosbags/
+scripts/selim_rosbags.zip
+scripts/rosbag*/
+scripts/rosbag2_*/
+
+**/__pycache__/
+*.pyc
